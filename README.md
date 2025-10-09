@@ -77,11 +77,11 @@ import {firebaseAuth, firestoreDatabase }from "./firebaseConfig";
 
 ### **Classes**
 
-| Class             | Description                                                                                                                     |
-| ----------------- | ------------------------------------------------------------------------------------------------------------------------------- |
-| FirebaseAuth      | Provider for generating [firebase-authentication] and [IAuthContext] for @pankod/refine auth-provider                           |
-| FirestoreDatabase | Provider for initializing [Firestore] instance with the provided FirebaseApp and creating @pankod/refine [dataProvider]         |
-| FirebaseDatabase  | Provider for initializing [Realtime-Database] instance with the provided FirebaseApp and creating @pankod/refine [dataProvider] |
+| Class             | Description                                                                                                                |
+| ----------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| FirebaseAuth      | Provider for generating [firebase-authentication] and [IAuthContext] for Refine auth-provider                              |
+| FirestoreDatabase | Provider for initializing [Firestore] instance with the provided FirebaseApp and creating Refine [dataProvider]           |
+| FirebaseDatabase  | Provider for initializing [Realtime-Database] instance with the provided FirebaseApp and creating Refine [dataProvider]   |
 
 <!-- ### **initializeFirebase**
 
