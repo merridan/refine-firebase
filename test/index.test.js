@@ -32,6 +32,8 @@ const firestoreDatabase = new FirestoreDatabase({ firebaseApp: app }, db);
     console.log("Logged in successfully");
 
     await createData();
+    
+    await testCustomMethod();
 
     auth.currentUser.delete();
 })();
@@ -63,5 +65,45 @@ async function createData() {
     }
 }
 
-module.exports = { register, login };
+async function testCustomMethod() {
+    try {
+        console.log("Testing custom method with setDoc...");
+        
+        // Test 1: Create/update document with specific ID using custom method
+        const result1 = await firestoreDatabase.custom({
+            url: "TEST/custom-doc-1",
+            method: "post",
+            payload: {
+                name: "Custom Test",
+                age: 25,
+                description: "Created via custom method"
+            }
+        });
+        console.log("Custom setDoc result:", result1);
+
+        // Test 2: Update document using merge with custom method
+        const result2 = await firestoreDatabase.custom({
+            url: "TEST/custom-doc-1",
+            method: "patch",
+            payload: {
+                age: 30,
+                updatedAt: new Date().toISOString()
+            }
+        });
+        console.log("Custom patch result:", result2);
+
+        // Test 3: Read document using custom method
+        const result3 = await firestoreDatabase.custom({
+            url: "TEST/custom-doc-1",
+            method: "get"
+        });
+        console.log("Custom get result:", result3);
+
+        console.log("Custom method tests passed!");
+    } catch (error) {
+        console.error("Custom method test error:", error);
+    }
+}
+
+module.exports = { register, login, testCustomMethod };
 
