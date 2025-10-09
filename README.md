@@ -67,6 +67,53 @@ import {firebaseAuth, firestoreDatabase }from "./firebaseConfig";
     >
 ```
 
+**4. Using the custom method with setDoc**
+
+The `custom` method allows you to perform custom Firestore operations, including using `setDoc` to create or update documents with a specific ID:
+
+```js
+// Using custom method with setDoc to create/update a document with a specific ID
+const dataProvider = firestoreDatabase.getDataProvider();
+
+// Create or update a document with a specific ID
+const result = await dataProvider.custom({
+    url: "posts/my-custom-id",  // resource/documentId
+    method: "post",              // "post" to overwrite, "patch" or "put" to merge
+    payload: {
+        title: "My Post",
+        content: "Post content",
+        createdAt: new Date().toISOString()
+    }
+});
+
+// Merge update (partial update) using patch
+const updateResult = await dataProvider.custom({
+    url: "posts/my-custom-id",
+    method: "patch",             // Use "patch" for merge updates
+    payload: {
+        updatedAt: new Date().toISOString()
+    }
+});
+
+// Read a document
+const getResult = await dataProvider.custom({
+    url: "posts/my-custom-id",
+    method: "get"
+});
+
+// Delete a document
+await dataProvider.custom({
+    url: "posts/my-custom-id",
+    method: "delete"
+});
+```
+
+The `custom` method supports the following operations:
+- **POST**: Create or overwrite a document with a specific ID using `setDoc`
+- **PATCH/PUT**: Merge update a document with a specific ID using `setDoc` with `{ merge: true }`
+- **GET**: Read a document or collection
+- **DELETE**: Delete a document
+
 ## API Reference
 
 ### **Functions**

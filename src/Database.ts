@@ -14,6 +14,7 @@ export abstract class BaseDatabase {
         this.getOne = this.getOne.bind(this);
         this.updateData = this.updateData.bind(this);
         this.updateManyData = this.updateManyData.bind(this);
+        this.custom = this.custom?.bind(this);
         this.getAPIUrl = this.getAPIUrl.bind(this);
         this.requestPayloadFactory = this.requestPayloadFactory.bind(this);
         this.responsePayloadFactory = this.responsePayloadFactory.bind(this);
@@ -53,6 +54,8 @@ export abstract class BaseDatabase {
 
     abstract updateManyData(args: any): Promise<any>;
 
+    abstract custom?(args: any): Promise<any>;
+
     getAPIUrl() {
         return "";
     }
@@ -69,6 +72,7 @@ export abstract class BaseDatabase {
             update: this.updateData,
             updateMany: this.updateManyData,
             getApiUrl: this.getAPIUrl,
+            custom: this.custom,
         };
     }
 }

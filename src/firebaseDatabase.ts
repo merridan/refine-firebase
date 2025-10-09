@@ -1,5 +1,5 @@
 import { Database, get, getDatabase, ref, remove, set } from "firebase/database";
-import { ICreateData, IDeleteData, IDeleteManyData, IGetList, IGetMany, IGetOne, IDatabaseOptions, IUpdateData, IUpdateManyData } from "./interfaces";
+import { ICreateData, IDeleteData, IDeleteManyData, IGetList, IGetMany, IGetOne, IDatabaseOptions, IUpdateData, IUpdateManyData, ICustomMethod } from "./interfaces";
 import { BaseDatabase } from "./Database";
 
 import { v4 as uuidv4 } from 'uuid';
@@ -143,6 +143,83 @@ export class FirebaseDatabase extends BaseDatabase {
 
         } catch (error) {
             Promise.reject(error);
+        }
+    }
+
+    async custom<TData = any, TQuery = unknown, TPayload = unknown>(args: ICustomMethod): Promise<any> {
+        try {
+            const { url, method, payload } = args;
+            
+            // Parse URL to extract resource and optional document ID
+            // Expected formats: "resource" or "resource/id"
+            const parts = url.split('/');
+            const resource = parts[0];
+            const id = parts[1];
+
+            // For set operations
+            if (method === "post" || method === "put" || method === "patch") {
+                if (id) {
+                    // Use set to create or update document with specific ID
+                    const databaseRef = this.getRef(`${resource}/${id}`);
+                    const processedPayload = this.requestPayloadFactory(resource, payload);
+                    
+                    await set(databaseRef, processedPayload);
+                    
+                    const data = this.responsePayloadFactory(resource, { id, ...processedPayload });
+                    return { data };
+                } else {
+                    // If no ID provided, generate a new one
+                    const uuid = uuidv4();
+                    const databaseRef = this.getRef(`${resource}/${uuid}`);
+                    const processedPayload = {
+                        ...payload,
+                        id: uuid,
+                    };
+                    
+                    await set(databaseRef, this.requestPayloadFactory(resource, processedPayload));
+                    
+                    const data = this.responsePayloadFactory(resource, processedPayload);
+                    return { data };
+                }
+            } else if (method === "get") {
+                if (id) {
+                    // Get single document
+                    const databaseRef = this.getRef(resource);
+                    const snapshot = await get(databaseRef);
+                    
+                    if (snapshot?.exists()) {
+                        const data = this.responsePayloadFactory(resource, snapshot.val()?.[id]);
+                        return { data };
+                    } else {
+                        return Promise.reject(new Error("Document not found"));
+                    }
+                } else {
+                    // Get list of documents
+                    const databaseRef = this.getRef(resource);
+                    const snapshot = await get(databaseRef);
+                    
+                    if (snapshot?.exists()) {
+                        let data = Object.values(snapshot.val());
+                        data = data.map(item => this.responsePayloadFactory(resource, item));
+                        return { data };
+                    } else {
+                        return Promise.reject(new Error("Resource not found"));
+                    }
+                }
+            } else if (method === "delete") {
+                if (id) {
+                    // Delete single document
+                    const databaseRef = this.getRef(`${resource}/${id}`);
+                    await remove(databaseRef);
+                    return { data: { id } };
+                } else {
+                    return Promise.reject(new Error("Document ID required for delete operation"));
+                }
+            } else {
+                return Promise.reject(new Error(`Unsupported method: ${method}`));
+            }
+        } catch (error) {
+            return Promise.reject(error);
         }
     }
 }
