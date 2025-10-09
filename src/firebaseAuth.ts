@@ -1,5 +1,5 @@
 import { FirebaseApp } from "@firebase/app";
-import { AuthProvider } from "@pankod/refine-core";
+import { AuthProvider } from "@refinedev/core";
 import { Auth, inMemoryPersistence, browserLocalPersistence, browserSessionPersistence, createUserWithEmailAndPassword, getAuth, getIdTokenResult, ParsedToken, RecaptchaParameters, RecaptchaVerifier, sendEmailVerification, sendPasswordResetEmail, signInWithEmailAndPassword, signOut, updateEmail, updatePassword, updateProfile, User as FirebaseUser } from "firebase/auth";
 import { IAuthCallbacks, ILoginArgs, IRegisterArgs, IUser } from "./interfaces";
 import { detectPlatform } from "./helpers/detectPlatform";
@@ -28,8 +28,13 @@ export class FirebaseAuth {
     }
 
     public async handleLogOut() {
-        await signOut(this.auth);
-        await this.authActions?.onLogout?.(this.auth);
+        try {
+            await signOut(this.auth);
+            await this.authActions?.onLogout?.(this.auth);
+            return { success: true };
+        } catch (error: any) {
+            return { success: false, error };
+        }
     }
 
     public async handleRegister(args: IRegisterArgs) {
@@ -44,9 +49,9 @@ export class FirebaseAuth {
                 }
                 this.authActions?.onRegister?.(userCredential.user);
             }
-
-        } catch (error) {
-            return Promise.reject(error);
+            return { success: true };
+        } catch (error: any) {
+            return { success: false, error };
         }
     }
 
@@ -65,23 +70,28 @@ export class FirebaseAuth {
                 const userToken = await userCredential?.user?.getIdToken?.();
                 if (userToken) {
                     this.authActions?.onLogin?.(userCredential.user);
+                    return { success: true };
                 } else {
-                    return Promise.reject(new Error("User is not found"));
+                    return { success: false, error: new Error("User is not found") };
                 }
             } else {
-                return Promise.reject(new Error("User is not found"));
+                return { success: false, error: new Error("User is not found") };
             }
-        } catch (error) {
-            return Promise.reject(error);
+        } catch (error: any) {
+            return { success: false, error };
         }
     }
 
-    public handleResetPassword(email: string) {
-        return sendPasswordResetEmail(this.auth, email);
+    public async handleResetPassword(email: string) {
+        try {
+            await sendPasswordResetEmail(this.auth, email);
+            return { success: true };
+        } catch (error: any) {
+            return { success: false, error };
+        }
     }
 
     public async onUpdateUserData(args: IRegisterArgs) {
-
         try {
             if (this.auth?.currentUser) {
                 const { displayName, email, password } = args;
@@ -96,9 +106,11 @@ export class FirebaseAuth {
                 if (displayName && this.auth.currentUser.displayName !== displayName) {
                     await updateProfile(this.auth.currentUser, { displayName: displayName });
                 }
+                return { success: true };
             }
-        } catch (error) {
-            return Promise.reject(error);
+            return { success: false, error: new Error("User is not found") };
+        } catch (error: any) {
+            return { success: false, error };
         }
     }
 
@@ -121,10 +133,11 @@ export class FirebaseAuth {
     }
 
     private async handleCheckAuth() {
-        if (await this.getFirebaseUser()) {
-            return Promise.resolve();
+        const user = await this.getFirebaseUser();
+        if (user) {
+            return { authenticated: true };
         } else {
-            return Promise.reject(new Error("User is not found"));
+            return { authenticated: false, error: new Error("User is not found"), logout: true };
         }
     }
 
@@ -145,10 +158,13 @@ export class FirebaseAuth {
         return {
             login: this.handleLogIn,
             logout: this.handleLogOut,
-            checkAuth: this.handleCheckAuth,
-            checkError: () => Promise.resolve(),
+            check: this.handleCheckAuth,
+            onError: () => Promise.resolve({}),
             getPermissions: this.getPermissions,
-            getUserIdentity: this.getUserIdentity,
+            getIdentity: this.getUserIdentity,
+            register: this.handleRegister,
+            forgotPassword: this.handleResetPassword,
+            updatePassword: this.onUpdateUserData,
         };
     }
 }
